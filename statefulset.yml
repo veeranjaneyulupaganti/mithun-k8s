@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: 
+  name: mongodss
+spec: 
+  serviceName: mongodsvc
+  selector: 
+    matchLabels: 
+      app: mongod
+  replicas: 3
+  template: 
+    metadata: 
+      name: mongod-pod
+      labels: 
+        app: mongod
+    spec: 
+      terminationGracePeriodSeconds: 10 
+      containers: 
+      - name: mongod-container
+        image: mongo
+        command: 
+          - "mongod"
+          - "--bind_ip"
+          - "0.0.0.0"
+          - "--repSet" 
+          - "MainRepSet" 
+        ports: 
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongod-pvc
+          mountPath: "/data/db"
+  volumeClaimTemplates:
+  - metadata: 
+      name: mongod-pvc
+    spec: 
+      accessModes: [ "ReadWriteOnce" ]
+      resources: 
+        requests:
+          storage: 1Gi    
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: mongodsvc
+spec: 
+  selector: 
+    app: mongod
+  clusterIP: None
+  ports: 
+  - port: 27017
+    targetPort: 27017
